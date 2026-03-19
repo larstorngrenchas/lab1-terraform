@@ -16,4 +16,4 @@ Skälet till att köra start-scriptet är att en standard-installation av Ubuntu
 ![Github Actions finished](images/github_actions_completed.jpg)
 ![VM created via terraform apply in terminal](images/dump_GCP_vm_created.jpg)
 ![VM visible in Google Cloud Platform](images/dump_vm_instances_larstorngren.jpg)
-![Pull request history](images/pull_requests_history.jpg)
+![Pull request history](images/github_pull_requests.jpg)
