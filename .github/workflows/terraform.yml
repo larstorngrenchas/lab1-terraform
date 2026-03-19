@@ -27,13 +27,13 @@ jobs:
           scan-ref: "."
           severity: "CRITICAL,HIGH"
 
-  validate:
+  terraform:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
       - name: Terraform Init
-      #  run: terraform init -backend=false
+        #  run: terraform init -backend=false
         run: terraform init
       - name: Terraform Validate
         run: terraform validate
@@ -41,7 +41,7 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+          credentials_json: "${{ secrets.GCP_SA_KEY }}"
 
       - name: Setup Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
