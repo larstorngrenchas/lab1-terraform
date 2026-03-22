@@ -55,7 +55,7 @@ jobs:
         run: |
           # 1. Hämta IP (värdet hamnar i GitHub-löparens minne)
           VM_IP=$(gcloud compute instances describe "lars-torngren-lab1-vm" \
-            --zone="europe-north1-b" \
+            --zone="europe-west1-b" \
             --format='value(networkInterfaces.accessConfigs.natIP)')
 
           echo "Ansluter till VM på IP: $VM_IP"
@@ -117,7 +117,7 @@ jobs:
         run: |
           terraform plan \
             -var="project_id=chas-devsecops-2026" \
-            -var="region=europe-north1" \
+            -var="region=europe-west1" \
             -var="student_id=lars-torngren"
 
 #
