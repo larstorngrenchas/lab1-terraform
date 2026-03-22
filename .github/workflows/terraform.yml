@@ -44,7 +44,7 @@ jobs:
         run: |
           # Skapa en lokal variabel i bash för att undvika problem med citattecken
           STUDENT_ID="${{ secrets.STUDENT_ID }}"
-          VM_NAME="${STUDENT_ID}-lab1-vm"
+          VM_NAME="lars-torngren-lab1-vm"
 
           echo "Söker efter VM: $VM_NAME"
 
@@ -117,7 +117,7 @@ jobs:
           terraform plan \
             -var="project_id=chas-devsecops-2026" \
             -var="region=europe-north1" \
-            -var="student_id=${{ secrets.STUDENT_ID }}"
+            -var="student_id=lars-torngren"
 
 #
 #  terraform-apply:
