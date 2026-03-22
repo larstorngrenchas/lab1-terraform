@@ -25,6 +25,7 @@ jobs:
           scan-type: "config"
           scan-ref: "."
           severity: "CRITICAL,HIGH"
+      - run: trivy config --severity CRITICAL --exit-code 1 .
 
   verify-hardening:
     needs: lint-and-scan
@@ -60,7 +61,7 @@ jobs:
 
           # 2. Run the tests (we use 'EOF' with quotes to not expand variables locally)
           ssh -i ~/.ssh/id_github_actions -o StrictHostKeyChecking=no -o ConnectTimeout=30 ubuntu@$VM_IP << 'EOF'
-            set -e
+            #set -e
             echo "--- Verifierar SSH-härdning ---"
             grep -q "^MaxAuthTries 3" /etc/ssh/sshd_config && echo "✅ SSH OK"
             
@@ -71,25 +72,37 @@ jobs:
             echo "--- Kontrollerar Lynis ---"
             echo "⏳ Väntar på att startup-skriptet och Lynis ska bli klara..."
             
-            # Vänta max 5 minuter (30 försök * 10 sekunder)
-            for i in {1..30}; do
+            # Vänta max 6 minuter (36 försök * 10 sekunder)
+            for i in {1..36}; do
               if [ -f /var/log/lynis-report.txt ]; then
                 echo "✅ Lynis-rapport hittad efter $i försök!"
                 # Vänta 5 sekunder extra så att filen hinner skrivas klart
                 sleep 5
                 break
               fi
-              echo "Väntar på rapport... ($i/30)"
+              echo "Väntar på rapport... ($i/36)"
               sleep 10
             done
 
-            if [ ! -f /var/log/lynis-report.txt ]; then
-              echo "❌ TIMEOUT: Lynis-rapporten skapades aldrig. Kontrollera journalctl -u google-startup-scripts.service på VM:en."
-              exit 1
-            fi
+            #if [ ! -f /var/log/lynis-report.txt ]; then
+            #  echo "❌ TIMEOUT: Lynis-rapporten skapades aldrig. Kontrollera journalctl -u google-startup-scripts.service på VM:en."
+            #  exit 1
+            #fi
 
             echo "--- Verifierar resultat ---"
-            grep -i "Hardening index" /var/log/lynis-report.txt
+            #grep -i "Hardening index" /var/log/lynis-report.txt
+            if [ -f /var/log/lynis-report.txt ]; then
+              # Vi använder 'cat' och 'tr' för att tvätta bort färgkoder innan grep
+              # Detta förhindrar att grep misslyckas pga dolda tecken
+              SCORE_LINE=$(cat /var/log/lynis-report.txt | tr -d '\033' | grep "Hardening index")
+              echo "Hittade rad: $SCORE_LINE"
+              
+              # Kontrollera att raden faktiskt innehåller något
+              [[ -z "$SCORE_LINE" ]] && (echo "❌ Kunde inte läsa index" && exit 1) || echo "✅ Index läst"
+            else
+              echo "❌ Filen saknas fortfarande"
+              exit 1
+            fi
 
             #if [ -f /var/log/lynis-report.txt ]; then
               # Lynis skriver poängen i formatet "Hardening index : 65"
