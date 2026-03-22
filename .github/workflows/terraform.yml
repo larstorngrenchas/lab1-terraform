@@ -56,7 +56,7 @@ jobs:
           # 1. Hämta IP (värdet hamnar i GitHub-löparens minne)
           VM_IP=$(gcloud compute instances describe "lars-torngren-lab1-vm" \
             --zone="europe-west1-b" \
-            --format='value(networkInterfaces.accessConfigs.natIP)')
+            --format='value(networkInterfaces[0].accessConfigs[0].natIP)')
 
           echo "Ansluter till VM på IP: $VM_IP"
 
