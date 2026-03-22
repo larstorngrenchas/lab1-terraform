@@ -56,12 +56,6 @@ chmod 600 /etc/shadow
 chmod 600 /etc/gshadow
 
 # 8. Ta bort onödiga tjänster (Adresserar DEB-0280)
-#systemctl disable --now avahi-daemon
-#systemctl disable --now cups
-#systemctl disable --now rpcbind
-systemctl disable --now nfs-server
-#systemctl disable --now rpcbind.socket
-systemctl disable --now nfs-server.socket
 systemctl stop snapd.service || true
 systemctl disable snapd.service || true
 
