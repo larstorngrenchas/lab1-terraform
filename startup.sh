@@ -51,7 +51,7 @@ chmod 600 /etc/shadow
 chmod 600 /etc/gshadow
 
 # 8. Ta bort onödiga tjänster (Adresserar DEB-0280)
-systemctl disable --now avahi-daemon
+#systemctl disable --now avahi-daemon
 systemctl disable --now cups
 systemctl disable --now rpcbind
 systemctl disable --now nfs-server
