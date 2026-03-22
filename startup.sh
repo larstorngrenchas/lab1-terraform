@@ -15,9 +15,7 @@ apt-get install -y --no-install-recommends \
     acct \
     rkhunter \
     libpam-tmpdir \
-    apt-show-versions \
-    aide \
-    aideinit
+    apt-show-versions 
 
 # 2. SSH-härdning (Adresserar SSH-7408 - flera punkter)
 sed -i 's/#MaxAuthTries 6/MaxAuthTries 3/' /etc/ssh/sshd_config
@@ -55,12 +53,16 @@ echo "install sctp /bin/true" >> /etc/modprobe.d/disable-protocols.conf
 #echo "net.ipv4.tcp_syncookies=1" >> /etc/sysctl.conf
 #sysctl -p
 cat <<EOF > /etc/sysctl.d/99-hardening.conf
-net.ipv4.conf.all.rp_filter=1
-net.ipv4.conf.default.rp_filter=1
+kernel.kptr_restrict = 2
+kernel.dmesg_restrict = 1
+net.ipv4.conf.all.rp_filter = 1
+net.ipv4.conf.default.rp_filter = 1
 net.ipv4.conf.all.send_redirects = 0
 net.ipv4.conf.all.accept_redirects = 0
 net.ipv4.tcp_syncookies = 1
 net.ipv4.ip_forward = 0
+net.ipv4.conf.all.accept_source_route = 0
+net.ipv6.conf.all.accept_source_route = 0
 EOF
 sysctl -p /etc/sysctl.d/99-hardening.conf
 
@@ -142,8 +144,8 @@ echo "$MESSAGE" > /etc/motd
 
 # Installera AIDE (File Integrity) - Ger ofta 3-5 poäng direkt
 #apt-get install -y aide aideinit --no-install-recommends
-aideinit --quiet --force
-cp /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz
+#aideinit --quiet --force
+#cp /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz
 
 # Begränsa kärn-information (KRNL-6000)
 # Hindra vanliga användare från att se dmesg (loggar från kärnan)
