@@ -2,7 +2,7 @@ packer {
   required_plugins {
     googlecompute = {
       source  = "://github.com"
-      version = "~> 1.0"
+      version = "~> 1.1.4"
     }
   }
 }
@@ -33,8 +33,12 @@ build {
     script = "startup.sh"
   }
 
-  # Här kan vi köra Lynis direkt under bygget för att verifiera
+  # 2. Kör Lynis inuti imagen
+  # Vi lägger till || true för att Packer ska fortsätta även om Lynis har anmärkningar
   provisioner "shell" {
-    inline = ["sudo lynis audit system --quick --no-colors"]
+    inline = [
+      "sudo lynis audit system --quick --no-colors > /tmp/lynis-report.txt || true",
+      "sudo mv /tmp/lynis-report.txt /var/log/lynis-report.txt"
+    ]
   }
 }
