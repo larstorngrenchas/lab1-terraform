@@ -62,11 +62,11 @@ jobs:
             --zone="europe-west1-b" \
             --format='value(networkInterfaces[0].accessConfigs[0].natIP)')
 
-          echo "Ansluter till VM: $VM_IP"
+          echo "Ansluter till VM: $VM_IP som ubuntu med SSH-nyckel"
 
           # Nu använder vi nyckeln vi skapade i steget innan
           ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ubuntu@$VM_IP << 'EOF'
-            echo "Verifierar härdning..."
+            echo "✅ Inloggad! Kör tester..."
 
           # 2. Konfigurera SSH-nyckel
           #mkdir -p ~/.ssh
@@ -89,6 +89,9 @@ jobs:
             echo "--- Kontrollerar Lynis ---"
             [ -f /var/log/lynis-report.txt ]
             echo "✅ All manuell verifiering OK!"
+            
+            # Visa scoren direkt i terminalen för säkerhets skull
+            grep "Hardening index" /var/log/lynis-report.txt
           EOF
 
           # Hämta Lynis-rapporten
