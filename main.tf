@@ -18,11 +18,19 @@ resource "google_compute_instance" "vm" {
   machine_type = "e2-micro"
   zone         = "${var.region}-b"
 
+  #boot_disk {
+  #  initialize_params {
+  #    image = "ubuntu-os-cloud/ubuntu-2204-lts"
+  #    size  = 20
+  #    type  = "pd-balanced"
+  #  }
+  #}
+
   boot_disk {
-    initialize_params {
-      image = "ubuntu-os-cloud/ubuntu-2204-lts"
-      size  = 20
-      type  = "pd-balanced"
+  initialize_params {
+    image = "family/hardened-ubuntu" # Terraform tar alltid den senaste versionen
+    size  = 20
+    type  = "pd-balanced"
     }
   }
 
@@ -36,12 +44,10 @@ resource "google_compute_instance" "vm" {
     # file() reading your local public key when you run terraform apply
     # 'ubuntu' is the user name within the VM
     # 'split' splits the key at spaces, we take the two first parts (type and key)
-    #ssh-keys = "ubuntu:${join(" ", slice(split(" ", file("/Users/lasse/.ssh/id_ed25519.pub")), 0, 2))}"
-    #ssh-keys = "ubuntu:${file("id_github_actions.pub")}"
     ssh-keys = "ubuntu:${var.ssh_pub_key}"
   }
 
-  metadata_startup_script = file("startup.sh")
+  #metadata_startup_script = file("startup.sh")
 
   labels = {
     student = var.student_id

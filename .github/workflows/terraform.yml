@@ -8,7 +8,32 @@ on:
     branches: [main]
 
 jobs:
+  build-packer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Packer
+        uses: hashicorp/setup-packer@main
+        with:
+          version: "latest"
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: "${{ secrets.GCP_SA_KEY }}"
+
+      - name: Packer Init
+        run: packer init .
+
+      - name: Packer Build
+        run: |
+          packer build \
+            -var "project_id=chas-devsecops-2026" \
+            ubuntu-hardened.pkr.hcl
+
   lint-and-scan:
+    needs: [build-packer] # <--- Detta gör att Terraform väntar på Packer!
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

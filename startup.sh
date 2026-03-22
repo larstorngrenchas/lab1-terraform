@@ -2,6 +2,9 @@
 set -x
 set -e
 
+# Tillfällig fix om apt behöver köra saker från /tmp under installationen
+export TMPDIR=/var/tmp
+
 # 1. Paket & Verktyg (Adresserar DEB-0280, PKGS-7394)
 apt-get update
 apt-get install -y --no-install-recommends \
