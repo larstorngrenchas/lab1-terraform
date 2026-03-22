@@ -14,3 +14,8 @@ variable "student_id" {
   description = "Your student identifier"
   type        = string
 }
+
+variable "ssh_pub_key" {
+  type    = string
+  default = ""
+}

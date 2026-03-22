@@ -33,12 +33,26 @@ ufw --force enable
 # Enable automatic security updates
 dpkg-reconfigure -plow unattended-upgrades
 
+# Auditd & Lynis (Adresserar AUDT-9400, AUDT-9401)
+apt-get install -y auditd
+
+# Skapa en enkel audit-policy (Adresserar AUDT-9402)
+echo "-a always,exit -F arch=b64 -S execve -k exec" >> /etc/audit/rules.d/audit.rules
+echo "-a always,exit -F arch=b32 -S execve -k exec" >> /etc/audit/rules.d/audit.rules
+systemctl restart auditd
+chmod 700 /usr/bin/as
+
 # Installera Lynis (DEB-baserat)
 apt-get install -y lynis
 
+# Sätt en banner för att avskräcka obehöriga (Adresserar AUTH-9328)
+echo "Authorized access only!" > /etc/issue.net
+
+
+
 # Kör en audit och spara rapporten på en säker plats
 # --quick för att köra utan användarinteraktion
-lynis audit system --quick > /var/log/lynis-report.txt
+lynis audit system --quick --no-colors > /var/log/lynis-report.txt
 
 # Skapa en enkel check-fil för att bekräfta att skriptet gått klart
 echo "SUCCESS" > /var/tmp/startup-status
