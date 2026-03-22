@@ -82,15 +82,21 @@ jobs:
         run: |
           # Extract the score from the report
           # Lynis often save this as "hardening_index=XX" in the log/report, so we can grep for it
-          SCORE=$(grep "Hardening index" lynis-report.txt | cut -d':' -f2 | xargs || echo "0")
+          #SCORE=$(grep "Hardening index" lynis-report.txt | cut -d':' -f2 | xargs || echo "0")
+          # Remove all colors and special characters to get a clean number
+          RAW_SCORE=$(grep "Hardening index" lynis-report.txt | cut -d':' -f2)
+          CLEAN_SCORE=$(echo "$RAW_SCORE" | tr -dc '0-9')
 
           echo "==========================================="
           echo "🛡️ DIN LYNIS HARDENING SCORE: $SCORE"
           echo "==========================================="
 
+          # Save the number other steps can use it
+          echo "HARDENING_SCORE=$CLEAN_SCORE" >> $GITHUB_ENV
+
           # Put in a requirement: If score is under 60, mark as failed
-          if [ "$SCORE" -lt 60 ]; then
-            echo "❌ Poängen ($SCORE) är för låg. Fortsätt härda systemet!"
+          if [ "$SCORE" -lt 65 ]; then
+            echo "❌ Säkerhetspoängen ($SCORE) är för låg. Fortsätt härda systemet!"
             exit 1
           fi
 
