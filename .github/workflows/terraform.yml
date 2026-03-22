@@ -42,8 +42,14 @@ jobs:
 
       - name: Get VM IP and Run SSH Tests
         run: |
-          # 1. Hämta IP dynamiskt via gcloud
-          VM_IP=$(gcloud compute instances describe "${{ secrets.STUDENT_ID }}-lab1-vm" \
+          # Skapa en lokal variabel i bash för att undvika problem med citattecken
+          STUDENT_ID="${{ secrets.STUDENT_ID }}"
+          VM_NAME="${STUDENT_ID}-lab1-vm"
+
+          echo "Söker efter VM: $VM_NAME"
+
+          # Hämta IP dynamiskt via gcloud med tydliga citattecken
+          VM_IP=$(gcloud compute instances describe "$VM_NAME" \
             --zone="europe-north1-b" \
             --format='get(networkInterfaces.accessConfigs.natIP)')
 
