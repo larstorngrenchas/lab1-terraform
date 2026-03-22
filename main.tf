@@ -37,7 +37,8 @@ resource "google_compute_instance" "vm" {
     # 'ubuntu' is the user name within the VM
     # 'split' splits the key at spaces, we take the two first parts (type and key)
     #ssh-keys = "ubuntu:${join(" ", slice(split(" ", file("/Users/lasse/.ssh/id_ed25519.pub")), 0, 2))}"
-    ssh-keys = "ubuntu:${file("id_github_actions.pub")}"
+    #ssh-keys = "ubuntu:${file("id_github_actions.pub")}"
+    ssh-keys = "ubuntu:${var.ssh_pub_key}"
   }
 
   metadata_startup_script = file("startup.sh")

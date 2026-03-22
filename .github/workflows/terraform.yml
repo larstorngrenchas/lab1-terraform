@@ -122,6 +122,7 @@ jobs:
           terraform plan \
             -var="project_id=chas-devsecops-2026" \
             -var="region=europe-west1" \
+            -var="ssh_pub_key=${{ secrets.SSH_PUB_KEY }}" \
             -var="student_id=lars-torngren"
 
 #
