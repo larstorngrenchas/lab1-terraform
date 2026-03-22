@@ -4,7 +4,16 @@ set -e
 
 # 1. Paket & Verktyg (Adresserar DEB-0280, PKGS-7394)
 apt-get update
-apt-get install -y ufw fail2ban unattended-upgrades libpam-tmpdir apt-show-versions
+apt-get install -y --no-install-recommends \
+    ufw \
+    fail2ban \
+    unattended-upgrades \
+    lynis \
+    auditd \
+    acct \
+    rkhunter \
+    libpam-tmpdir \
+    apt-show-versions
 
 # 2. SSH-härdning (Adresserar SSH-7408 - flera punkter)
 sed -i 's/#MaxAuthTries 6/MaxAuthTries 3/' /etc/ssh/sshd_config
@@ -16,6 +25,9 @@ sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_
 sed -i 's/#MaxSessions 10/MaxSessions 2/' /etc/ssh/sshd_config
 sed -i 's/#ClientAliveCountMax 3/ClientAliveCountMax 2/' /etc/ssh/sshd_config
 echo "LogLevel VERBOSE" >> /etc/ssh/sshd_config
+sed -i 's/#Compression yes/Compression no/' /etc/ssh/sshd_config
+sed -i 's/#TCPKeepAlive yes/TCPKeepAlive no/' /etc/ssh/sshd_config
+echo "AllowAgentForwarding no" >> /etc/ssh/sshd_config
 systemctl restart ssh
 
 # 3. Fail2ban fix (Adresserar DEB-0880)
@@ -55,6 +67,13 @@ sed -i 's/^PASS_WARN_AGE.*/PASS_WARN_AGE   14/' /etc/login.defs
 chmod 600 /etc/shadow
 chmod 600 /etc/gshadow
 
+# Öka antal rundor för lösenordshashing (SHA512 är bra, men 5000+ rundor är bättre)
+sed -i 's/^SHA_CRYPT_MIN_ROUNDS.*/SHA_CRYPT_MIN_ROUNDS 5000/' /etc/login.defs
+sed -i 's/^SHA_CRYPT_MAX_ROUNDS.*/SHA_CRYPT_MAX_ROUNDS 5000/' /etc/login.defs
+
+# Tvinga umask 027 för alla nya användare i login.defs (AUTH-9328)
+sed -i 's/^UMASK.*/UMASK 027/' /etc/login.defs
+
 # 8. Ta bort onödiga tjänster (Adresserar DEB-0280)
 systemctl stop snapd.service || true
 systemctl disable snapd.service || true
@@ -71,19 +90,35 @@ echo "unattended-upgrades unattended-upgrades/enable_auto_updates boolean true" 
 dpkg-reconfigure -f noninteractive unattended-upgrades
 
 # Auditd & Lynis (Adresserar AUDT-9400, AUDT-9401)
-# apt-get install -y auditd
-apt-get install -y auditd acct
-systemctl enable --now auditd
+#apt-get install -y acct
 systemctl enable --now acct
 
-# Skapa en enkel audit-policy (Adresserar AUDT-9402)
+# Ladda standardregler för auditd (övervakar t.ex. ändringar i /etc/passwd + Adresserar AUDT-9402)
+#apt-get install -y auditd
+systemctl enable --now auditd
+cat <<EOF > /etc/audit/rules.d/audit.rules
+-D
+-b 8192
+-f 1
+--backlog_wait_time 60000
+-w /etc/passwd -p wa -k passwd_changes
+-w /etc/shadow -p wa -k shadow_changes
+-w /etc/group -p wa -k group_changes
+-w /etc/gshadow -p wa -k gshadow_changes
+EOF
 echo "-a always,exit -F arch=b64 -S execve -k exec" >> /etc/audit/rules.d/audit.rules
 echo "-a always,exit -F arch=b32 -S execve -k exec" >> /etc/audit/rules.d/audit.rules
 systemctl restart auditd
+
 chmod 700 /usr/bin/as
 
+# Inaktivera USB-lagring och andra fysiska portar (KRNL-5820 / USB-1000)
+echo "install usb-storage /bin/true" >> /etc/modprobe.d/disable-usb.conf
+echo "install firewire-core /bin/true" >> /etc/modprobe.d/disable-usb.conf
+echo "install thunderbolt /bin/true" >> /etc/modprobe.d/disable-usb.conf
+
 # Installera Lynis (DEB-baserat)
-apt-get install -y lynis
+#apt-get install -y lynis
 
 # Sätt en banner för att avskräcka obehöriga (Adresserar AUTH-9328)
 echo "Authorized access only!" > /etc/issue.net
@@ -99,3 +134,9 @@ lynis audit system --quick --no-colors > /var/log/lynis-report.txt
 echo "SUCCESS" > /var/tmp/startup-status
 
 echo "Hardened startup script completed at $(date)" > /var/log/startup-complete.log
+
+
+# Installera rkhunter (Rootkit Hunter)
+#apt-get install -y rkhunter
+# Uppdatera databasen men kör inte scan under startup (tar för lång tid)
+rkhunter --propupd

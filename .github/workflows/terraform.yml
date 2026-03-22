@@ -72,15 +72,15 @@ jobs:
             echo "--- Kontrollerar Lynis ---"
             echo "⏳ Väntar på att startup-skriptet och Lynis ska bli klara..."
             
-            # Vänta max 6 minuter (36 försök * 10 sekunder)
-            for i in {1..36}; do
+            # Vänta max 8 minuter (48 försök * 10 sekunder)
+            for i in {1..48}; do
               if [ -f /var/log/lynis-report.txt ]; then
                 echo "✅ Lynis-rapport hittad efter $i försök!"
                 # Vänta 5 sekunder extra så att filen hinner skrivas klart
                 sleep 5
                 break
               fi
-              echo "Väntar på rapport... ($i/36)"
+              echo "Väntar på rapport... ($i/48)"
               sleep 10
             done
 
@@ -115,6 +115,19 @@ jobs:
             
             # Write out the score so it shows up in the log directly
             #grep "Hardening index" /var/log/lynis-report.txt || echo "Hardening index: 0"
+
+            echo "🔍 Verifierar Auditd-status (ACCT-9628)..."
+            # Kontrollera att tjänsten körs
+            systemctl is-active --quiet auditd && echo "✅ Auditd tjänst körs" || (echo "❌ Auditd körs inte" && exit 1)
+
+            # Kontrollera att våra specifika regler är laddade i kärnan
+            sudo auditctl -l | grep -q "passwd_changes" && echo "✅ Audit-regler för /etc/passwd laddade" || (echo "❌ Audit-regler saknas" && exit 1)
+            sudo auditctl -l | grep -q "shadow_changes" && echo "✅ Audit-regler för /etc/shadow laddade" || (echo "❌ Audit-regler saknas" && exit 1)
+
+            echo "🔍 Verifierar inaktiverade USB-drivers (USB-1000)..."
+            # Vi kollar om usb-storage går att ladda (det ska returnera fel om vår blacklist fungerar)
+            modprobe -n -v usb-storage 2>&1 | grep -q "install /bin/true" && echo "✅ USB-storage inaktiverat" || echo "⚠️ USB-storage kan fortfarande laddas"
+
           EOF
 
           # 3. Fetch report (IMPORTANT: Here $VM_IP has to be outside of 'EOF')
