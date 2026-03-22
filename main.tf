@@ -31,6 +31,13 @@ resource "google_compute_instance" "vm" {
     access_config {} # Ger VM:en en extern IP
   }
 
+  metadata = {
+    # Formatet ska vara: användarnamn:nyckelsträng
+    # file() läser in din lokala publika nyckel när du kör terraform apply
+    # 'ubuntu' är användarnamnet inuti VM:en
+    ssh-keys = "ubuntu:${file("/Users/lasse/.ssh/id_ed25519.pub")}"
+  }
+
   metadata_startup_script = file("startup.sh")
 
   labels = {

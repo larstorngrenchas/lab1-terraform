@@ -40,6 +40,15 @@ jobs:
       - name: Setup Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
+      # 1. Förbered nyckeln först (oberoende av IP)
+      - name: Konfigurera SSH-nyckel
+        run: |
+          mkdir -p ~/.ssh
+          cat <<EOF > ~/.ssh/id_ed25519
+          ${{ secrets.SSH_PRIVATE_KEY }}
+          EOF
+          chmod 600 ~/.ssh/id_ed25519
+
       - name: Get VM IP and Run SSH Tests
         run: |
           # Skapa en lokal variabel i bash för att undvika problem med citattecken
@@ -55,12 +64,18 @@ jobs:
 
           echo "Ansluter till VM: $VM_IP"
 
-          # 2. Konfigurera SSH-nyckel
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
+          # Nu använder vi nyckeln vi skapade i steget innan
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ubuntu@$VM_IP << 'EOF'
+            echo "Verifierar härdning..."
 
-          # 3. Verifiera inställningar inuti VM:en
+          # 2. Konfigurera SSH-nyckel
+          #mkdir -p ~/.ssh
+          #at <<EOF > ~/.ssh/id_ed25519
+          #${{ secrets.SSH_PRIVATE_KEY }}
+          #EOF
+          #chmod 600 ~/.ssh/id_ed25519
+
+          # Verifiera inställningar inuti VM:en
           ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP << 'EOF'
             set -e
             echo "--- Verifierar SSH-härdning ---"
@@ -76,8 +91,10 @@ jobs:
             echo "✅ All manuell verifiering OK!"
           EOF
 
-          # 4. Hämta Lynis-rapporten
-          scp -o StrictHostKeyChecking=no ubuntu@$VM_IP:/var/log/lynis-report.txt ./lynis-report.txt
+          # Hämta Lynis-rapporten
+          #scp -o StrictHostKeyChecking=no ubuntu@$VM_IP:/var/log/lynis-report.txt ./lynis-report.txt
+          # Hämta Lynis-rapporten med samma nyckel
+          scp -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ubuntu@$VM_IP:/var/log/lynis-report.txt ./lynis-report.txt
 
       - name: Extract and Display Hardening Score
         run: |
