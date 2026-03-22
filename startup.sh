@@ -11,7 +11,6 @@ apt-get install -y --no-install-recommends \
     ufw \
     fail2ban \
     unattended-upgrades \
-    lynis \
     auditd \
     acct \
     rkhunter \
@@ -159,6 +158,7 @@ apt-get clean
 
 # Kör en audit och spara rapporten på en säker plats
 # --quick för att köra utan användarinteraktion
+apt-get install -y lynis
 lynis audit system --quick --no-colors > /var/log/lynis-report.txt
 
 # Skapa en enkel check-fil för att bekräfta att skriptet gått klart
