@@ -135,23 +135,23 @@ jobs:
 
       - name: Extract and Display Hardening Score
         run: |
-          # Extract the score from the report
-          # Lynis often save this as "hardening_index=XX" in the log/report, so we can grep for it
-          #SCORE=$(grep "Hardening index" lynis-report.txt | cut -d':' -f2 | xargs || echo "0")
-          # Remove all colors and special characters to get a clean number
-          RAW_SCORE=$(grep "Hardening index" lynis-report.txt | cut -d':' -f2)
-          CLEAN_SCORE=$(echo "$RAW_SCORE" | tr -dc '0-9')
+          # 1. Hämta raden, tvätta bort färger/skräp och behåll bara siffror
+          # Vi använder 'tr -dc 0-9' för att vara helt säkra på att få en ren siffra
+          CLEAN_SCORE=$(grep "Hardening index" lynis-report.txt | cut -d':' -f2 | tr -dc '0-9')
+
+          # 2. Kontrollera att vi faktiskt fick en siffra, annars sätt till 0
+          if [ -z "$CLEAN_SCORE" ]; then CLEAN_SCORE=0; fi
 
           echo "==========================================="
-          echo "🛡️ DIN LYNIS HARDENING SCORE: $SCORE"
+          echo "🛡️ DIN LYNIS HARDENING SCORE: $CLEAN_SCORE"
           echo "==========================================="
 
-          # Save the number other steps can use it
+          # 3. Spara siffran i miljövariabeln för framtida bruk
           echo "HARDENING_SCORE=$CLEAN_SCORE" >> $GITHUB_ENV
 
-          # Put in a requirement: If score is under 60, mark as failed
-          if [ "$SCORE" -lt 65 ]; then
-            echo "❌ Säkerhetspoängen ($SCORE) är för låg. Fortsätt härda systemet!"
+          # 4. Krav: Om poängen är under 70, markera som misslyckad
+          if [ "$CLEAN_SCORE" -lt 70 ]; then
+            echo "❌ Säkerhetspoängen ($CLEAN_SCORE) är under målet på 70. Fortsätt härda!"
             exit 1
           fi
 
