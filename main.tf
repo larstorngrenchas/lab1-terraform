@@ -31,6 +31,15 @@ resource "google_compute_instance" "vm" {
     access_config {} # Ger VM:en en extern IP
   }
 
+  metadata = {
+    # Format should be: username:key string
+    # file() reading your local public key when you run terraform apply
+    # 'ubuntu' is the user name within the VM
+    # 'split' splits the key at spaces, we take the two first parts (type and key)
+    #ssh-keys = "ubuntu:${join(" ", slice(split(" ", file("/Users/lasse/.ssh/id_ed25519.pub")), 0, 2))}"
+    ssh-keys = "ubuntu:${file("id_github_actions.pub")}"
+  }
+
   metadata_startup_script = file("startup.sh")
 
   labels = {
@@ -64,4 +73,9 @@ resource "google_compute_disk_resource_policy_attachment" "backup_attachment" {
   name = google_compute_resource_policy.daily_backup.name
   disk = google_compute_instance.vm.name
   zone = "${var.region}-b"
+}
+
+output "instance_external_ip" {
+  description = "Den externa IP-adressen för din härdade VM"
+  value       = google_compute_instance.vm.network_interface[0].access_config[0].nat_ip
 }
