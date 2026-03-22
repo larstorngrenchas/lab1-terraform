@@ -44,10 +44,12 @@ jobs:
       - name: Konfigurera SSH-nyckel
         run: |
           mkdir -p ~/.ssh
-          cat <<EOF > ~/.ssh/id_ed25519
+          #cat <<EOF > ~/.ssh/id_ed25519
+          cat <<EOF > ~/.ssh/id_github_actions
           ${{ secrets.SSH_PRIVATE_KEY }}
           EOF
-          chmod 600 ~/.ssh/id_ed25519
+          #chmod 600 ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_github_actions
 
       - name: Get VM IP and Run SSH Tests
         run: |
@@ -65,15 +67,9 @@ jobs:
           echo "Ansluter till VM: $VM_IP som ubuntu med SSH-nyckel"
 
           # Nu använder vi nyckeln vi skapade i steget innan
-          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ubuntu@$VM_IP << 'EOF'
+          #ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ubuntu@$VM_IP << 'EOF'
+          ssh -i ~/.ssh/id_github_actions -o StrictHostKeyChecking=no ubuntu@$VM_IP << 'EOF'
             echo "✅ Inloggad! Kör tester..."
-
-          # 2. Konfigurera SSH-nyckel
-          #mkdir -p ~/.ssh
-          #at <<EOF > ~/.ssh/id_ed25519
-          #${{ secrets.SSH_PRIVATE_KEY }}
-          #EOF
-          #chmod 600 ~/.ssh/id_ed25519
 
           # Verifiera inställningar inuti VM:en
           ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP << 'EOF'
@@ -89,7 +85,7 @@ jobs:
             echo "--- Kontrollerar Lynis ---"
             [ -f /var/log/lynis-report.txt ]
             echo "✅ All manuell verifiering OK!"
-            
+
             # Visa scoren direkt i terminalen för säkerhets skull
             grep "Hardening index" /var/log/lynis-report.txt
           EOF
@@ -97,7 +93,8 @@ jobs:
           # Hämta Lynis-rapporten
           #scp -o StrictHostKeyChecking=no ubuntu@$VM_IP:/var/log/lynis-report.txt ./lynis-report.txt
           # Hämta Lynis-rapporten med samma nyckel
-          scp -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ubuntu@$VM_IP:/var/log/lynis-report.txt ./lynis-report.txt
+          #scp -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ubuntu@$VM_IP:/var/log/lynis-report.txt ./lynis-report.txt
+          scp -i ~/.ssh/id_github_actions -o StrictHostKeyChecking=no ubuntu@$VM_IP:/var/log/lynis-report.txt ./lynis-report.txt
 
       - name: Extract and Display Hardening Score
         run: |

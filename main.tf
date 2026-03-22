@@ -38,7 +38,8 @@ resource "google_compute_instance" "vm" {
     #ssh-keys = "ubuntu:${file("/Users/lasse/.ssh/id_ed25519.pub")}"
     # Vi tar bort kommentaren i slutet av nyckeln för att undvika förvirring
     # split delar upp nyckeln vid mellanslag, vi tar de två första delarna (typ och nyckel)
-    ssh-keys = "ubuntu:${join(" ", slice(split(" ", file("/Users/lasse/.ssh/id_ed25519.pub")), 0, 2))}"
+    #ssh-keys = "ubuntu:${join(" ", slice(split(" ", file("/Users/lasse/.ssh/id_ed25519.pub")), 0, 2))}"
+    ssh-keys = "ubuntu:${file("/Users/lasse/.ssh/id_github_actions.pub")}"
   }
 
   metadata_startup_script = file("startup.sh")
