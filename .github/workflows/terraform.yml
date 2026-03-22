@@ -40,57 +40,67 @@ jobs:
       - name: Setup Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
-      # 1. Förbered nyckeln först (oberoende av IP)
-      - name: Konfigurera SSH-nyckel
+      # 1. Prepare the SSHkey (independent of IP)
+      - name: Configure SSH key for GitHub Actions
         run: |
           mkdir -p ~/.ssh
-          #cat <<EOF > ~/.ssh/id_ed25519
           cat <<EOF > ~/.ssh/id_github_actions
           ${{ secrets.SSH_PRIVATE_KEY }}
           EOF
-          #chmod 600 ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_github_actions
 
-      - name: Get VM IP and Run Security Tests
+      - name: Get VM IP and Run SSH Tests
         run: |
-          # 1. Hämta IP (värdet hamnar i GitHub-löparens minne)
-          VM_IP=$(gcloud compute instances describe "lars-torngren-lab1-vm" \
+          # Create a local variable in bash to avoid problems with quotes
+          STUDENT_ID="${{ secrets.STUDENT_ID }}"
+          VM_NAME="lars-torngren-lab1-vm"
+
+          echo "Söker efter VM: $VM_NAME"
+
+          # Fetch IP dynamically via gcloud with clear quotes
+          VM_IP=$(gcloud compute instances describe "$VM_NAME" \
             --zone="europe-west1-b" \
             --format='value(networkInterfaces[0].accessConfigs[0].natIP)')
 
-          echo "Ansluter till VM på IP: $VM_IP"
+          echo "Ansluter till VM: $VM_IP som ubuntu med SSH-nyckel"
 
-          # 2. Kör testerna (vi använder 'EOF' med citattecken för att inte expandera variabler lokalt)
-          ssh -i ~/.ssh/id_github_actions -o StrictHostKeyChecking=no -o ConnectTimeout=30 ubuntu@$VM_IP << 'EOF'
+          # Using the key we just created, connect to the VM and run the hardening verification commands
+          ssh -i ~/.ssh/id_github_actions -o StrictHostKeyChecking=no ubuntu@$VM_IP << 'EOF'
+            echo "✅ Inloggad! Kör tester..."
+
+          # Verify settings inside the VM
+          ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP << 'EOF'
             set -e
             echo "--- Verifierar SSH-härdning ---"
-            grep -q "^MaxAuthTries 3" /etc/ssh/sshd_config && echo "✅ SSH OK"
+            grep -q "^MaxAuthTries 3" /etc/ssh/sshd_config
+            grep -q "^X11Forwarding no" /etc/ssh/sshd_config
             
             echo "--- Verifierar System-härdning ---"
-            grep -q "umask 027" /etc/profile && echo "✅ Umask OK"
-            [ -f /etc/fail2ban/jail.local ] && echo "✅ Fail2ban OK"
+            grep -q "umask 027" /etc/profile
+            [ -f /etc/fail2ban/jail.local ]
             
             echo "--- Kontrollerar Lynis ---"
-            [ -f /var/log/lynis-report.txt ] && echo "✅ Lynis-rapport hittad"
-            
-            # Skriv ut scoren så den syns i loggen direkt
-            grep "Hardening index" /var/log/lynis-report.txt || echo "Hardening index: 0"
+            [ -f /var/log/lynis-report.txt ]
+            echo "✅ All manuell verifiering OK!"
+
+            # Show the score directly in the terminal for safety
+            grep "Hardening index" /var/log/lynis-report.txt
           EOF
 
-          # 3. Hämta rapporten (VIKTIGT: Här måste $VM_IP vara utanför 'EOF')
+          # Fetch the Lynis report
           scp -i ~/.ssh/id_github_actions -o StrictHostKeyChecking=no ubuntu@$VM_IP:/var/log/lynis-report.txt ./lynis-report.txt
 
       - name: Extract and Display Hardening Score
         run: |
-          # Extrahera poängen från rapporten
-          # Lynis sparar ofta detta som "hardening_index=XX" i sin logg/rapport
+          # Extract the score from the report
+          # Lynis often save this as "hardening_index=XX" in the log/report, so we can grep for it
           SCORE=$(grep "Hardening index" lynis-report.txt | cut -d':' -f2 | xargs || echo "0")
 
           echo "==========================================="
           echo "🛡️ DIN LYNIS HARDENING SCORE: $SCORE"
           echo "==========================================="
 
-          # Sätt ett krav: Om poängen är under 60, markera som misslyckad
+          # Put in a requirement: If score is under 60, mark as failed
           if [ "$SCORE" -lt 60 ]; then
             echo "❌ Poängen ($SCORE) är för låg. Fortsätt härda systemet!"
             exit 1
@@ -117,7 +127,7 @@ jobs:
         run: |
           terraform plan \
             -var="project_id=chas-devsecops-2026" \
-            -var="region=europe-west1" \
+            -var="region=europe-north1" \
             -var="student_id=lars-torngren"
 
 #

@@ -32,14 +32,12 @@ resource "google_compute_instance" "vm" {
   }
 
   metadata = {
-    # Formatet ska vara: användarnamn:nyckelsträng
-    # file() läser in din lokala publika nyckel när du kör terraform apply
-    # 'ubuntu' är användarnamnet inuti VM:en
-    #ssh-keys = "ubuntu:${file("/Users/lasse/.ssh/id_ed25519.pub")}"
-    # Vi tar bort kommentaren i slutet av nyckeln för att undvika förvirring
-    # split delar upp nyckeln vid mellanslag, vi tar de två första delarna (typ och nyckel)
+    # Format should be: username:key string
+    # file() reading your local public key when you run terraform apply
+    # 'ubuntu' is the user name within the VM
+    # 'split' splits the key at spaces, we take the two first parts (type and key)
     #ssh-keys = "ubuntu:${join(" ", slice(split(" ", file("/Users/lasse/.ssh/id_ed25519.pub")), 0, 2))}"
-    ssh-keys = "ubuntu:${file("/Users/lasse/.ssh/id_github_actions.pub")}"
+    ssh-keys = "ubuntu:${file("id_github_actions.pub")}"
   }
 
   metadata_startup_script = file("startup.sh")
