@@ -72,15 +72,15 @@ jobs:
             echo "--- Kontrollerar Lynis ---"
             echo "⏳ Väntar på att startup-skriptet och Lynis ska bli klara..."
             
-            # Vänta max 5 minuter (30 försök * 10 sekunder)
-            for i in {1..30}; do
+            # Vänta max 6 minuter (36 försök * 10 sekunder)
+            for i in {1..36}; do
               if [ -f /var/log/lynis-report.txt ]; then
                 echo "✅ Lynis-rapport hittad efter $i försök!"
                 # Vänta 5 sekunder extra så att filen hinner skrivas klart
                 sleep 5
                 break
               fi
-              echo "Väntar på rapport... ($i/30)"
+              echo "Väntar på rapport... ($i/36)"
               sleep 10
             done
 
