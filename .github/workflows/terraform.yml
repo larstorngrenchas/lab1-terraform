@@ -69,24 +69,36 @@ jobs:
             [ -f /etc/fail2ban/jail.local ] && echo "✅ Fail2ban OK"
             
             echo "--- Kontrollerar Lynis ---"
-            echo "Väntar på att Lynis ska köra klart..."
-              # Vänta upp till 120 sekunder på att filen ska dyka upp
-              for i in {1..24}; do
-                if [ -f /var/log/lynis-report.txt ]; then
-                  echo "✅ Rapport hittad!"
-                  break
-                fi
-              echo "Hittade inte rapporten än, väntar 5s... ($i/24)"
-              sleep 5
+            echo "⏳ Väntar på att startup-skriptet och Lynis ska bli klara..."
+            
+            # Vänta max 5 minuter (30 försök * 10 sekunder)
+            for i in {1..30}; do
+              if [ -f /var/log/lynis-report.txt ]; then
+                echo "✅ Lynis-rapport hittad efter $i försök!"
+                # Vänta 5 sekunder extra så att filen hinner skrivas klart
+                sleep 5
+                break
+              fi
+              echo "Väntar på rapport... ($i/30)"
+              sleep 10
             done
-            if [ -f /var/log/lynis-report.txt ]; then
-              # Lynis skriver poängen i formatet "Hardening index : 65"
-              # Vi använder -i för att strunta i stora/små bokstäver
-              grep -i "Hardening index" /var/log/lynis-report.txt || echo "Kunde inte hitta index i filen."
-            else
-              echo "❌ Hittade ingen rapport på /var/log/lynis-report.txt"
+
+            if [ ! -f /var/log/lynis-report.txt ]; then
+              echo "❌ TIMEOUT: Lynis-rapporten skapades aldrig. Kontrollera journalctl -u google-startup-scripts.service på VM:en."
               exit 1
             fi
+
+            echo "--- Verifierar resultat ---"
+            grep -i "Hardening index" /var/log/lynis-report.txt
+
+            #if [ -f /var/log/lynis-report.txt ]; then
+              # Lynis skriver poängen i formatet "Hardening index : 65"
+              # Vi använder -i för att strunta i stora/små bokstäver
+            #  grep -i "Hardening index" /var/log/lynis-report.txt || echo "Kunde inte hitta index i filen."
+            #else
+            #  echo "❌ Hittade ingen rapport på /var/log/lynis-report.txt"
+            #  exit 1
+            #fi
             
             # Write out the score so it shows up in the log directly
             #grep "Hardening index" /var/log/lynis-report.txt || echo "Hardening index: 0"
