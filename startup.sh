@@ -13,6 +13,8 @@ sed -i 's/#AllowTcpForwarding yes/AllowTcpForwarding no/' /etc/ssh/sshd_config
 sed -i 's/#AllowAgentForwarding yes/AllowAgentForwarding no/' /etc/ssh/sshd_config
 sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin no/' /etc/ssh/sshd_config
 sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
+sed -i 's/#MaxSessions 10/MaxSessions 2/' /etc/ssh/sshd_config
+sed -i 's/#ClientAliveCountMax 3/ClientAliveCountMax 2/' /etc/ssh/sshd_config
 echo "LogLevel VERBOSE" >> /etc/ssh/sshd_config
 systemctl restart ssh
 
@@ -23,6 +25,9 @@ systemctl restart fail2ban
 # 4. Systemhärdning & Umask (Adresserar AUTH-9328, KRNL-5820)
 echo "umask 027" >> /etc/profile
 echo "* hard core 0" >> /etc/security/limits.conf
+
+# Sätt restriktioner på kritiska verktyg (Adresserar PKGS-7394)
+chmod 700 /usr/bin/gcc /usr/bin/make 2>/dev/null || true
 
 # 5. Inaktivera protokoll som inte används (Adresserar NETW-3200)
 echo "install dccp /bin/true" >> /etc/modprobe.d/disable-protocols.conf
@@ -54,9 +59,9 @@ chmod 600 /etc/gshadow
 #systemctl disable --now avahi-daemon
 #systemctl disable --now cups
 #systemctl disable --now rpcbind
-#systemctl disable --now nfs-server
+systemctl disable --now nfs-server
 #systemctl disable --now rpcbind.socket
-#systemctl disable --now nfs-server.socket
+systemctl disable --now nfs-server.socket
 systemctl stop snapd.service || true
 systemctl disable snapd.service || true
 
@@ -71,9 +76,11 @@ ufw --force enable
 echo "unattended-upgrades unattended-upgrades/enable_auto_updates boolean true" | debconf-set-selections
 dpkg-reconfigure -f noninteractive unattended-upgrades
 
-
 # Auditd & Lynis (Adresserar AUDT-9400, AUDT-9401)
-apt-get install -y auditd
+# apt-get install -y auditd
+apt-get install -y auditd acct
+systemctl enable --now auditd
+systemctl enable --now acct
 
 # Skapa en enkel audit-policy (Adresserar AUDT-9402)
 echo "-a always,exit -F arch=b64 -S execve -k exec" >> /etc/audit/rules.d/audit.rules
@@ -86,6 +93,9 @@ apt-get install -y lynis
 
 # Sätt en banner för att avskräcka obehöriga (Adresserar AUTH-9328)
 echo "Authorized access only!" > /etc/issue.net
+
+# Sätt samma banner för lokala inloggningar
+echo "VARNING: Endast auktoriserad åtkomst. All aktivitet loggas." | tee /etc/issue /etc/issue.net
 
 # Kör en audit och spara rapporten på en säker plats
 # --quick för att köra utan användarinteraktion

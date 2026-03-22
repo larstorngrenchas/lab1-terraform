@@ -25,6 +25,7 @@ jobs:
           scan-type: "config"
           scan-ref: "."
           severity: "CRITICAL,HIGH"
+      - run: trivy config --severity CRITICAL --exit-code 1 .
 
   verify-hardening:
     needs: lint-and-scan
