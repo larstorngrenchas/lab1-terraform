@@ -18,21 +18,21 @@ resource "google_compute_instance" "vm" {
   machine_type = "e2-micro"
   zone         = "${var.region}-b"
 
-  #boot_disk {
-  #  initialize_params {
-  #    image = "ubuntu-os-cloud/ubuntu-2204-lts"
-  #    size  = 20
-  #    type  = "pd-balanced"
-  #  }
-  #}
-
   boot_disk {
-  initialize_params {
-    image = "family/hardened-ubuntu" # Terraform tar alltid den senaste versionen
-    size  = 20
-    type  = "pd-balanced"
+    initialize_params {
+      image = "ubuntu-os-cloud/ubuntu-2204-lts"
+      size  = 20
+      type  = "pd-balanced"
     }
   }
+
+  #boot_disk {
+  #initialize_params {
+  #  image = "family/hardened-ubuntu" # Terraform tar alltid den senaste versionen
+  #  size  = 20
+  #  type  = "pd-balanced"
+  #  }
+  #}
 
   network_interface {
     network = "default"
@@ -47,7 +47,7 @@ resource "google_compute_instance" "vm" {
     ssh-keys = "ubuntu:${var.ssh_pub_key}"
   }
 
-  #metadata_startup_script = file("startup.sh")
+  metadata_startup_script = file("startup.sh")
 
   labels = {
     student = var.student_id

@@ -3,7 +3,7 @@ set -x
 set -e
 
 # Tillfällig fix om apt behöver köra saker från /tmp under installationen
-export TMPDIR=/var/tmp
+#export TMPDIR=/var/tmp
 
 # 1. Paket & Verktyg (Adresserar DEB-0280, PKGS-7394)
 apt-get update
@@ -16,7 +16,9 @@ apt-get install -y --no-install-recommends \
     acct \
     rkhunter \
     libpam-tmpdir \
-    apt-show-versions
+    apt-show-versions \
+    aide \
+    aideinit
 
 # 2. SSH-härdning (Adresserar SSH-7408 - flera punkter)
 sed -i 's/#MaxAuthTries 6/MaxAuthTries 3/' /etc/ssh/sshd_config
@@ -140,7 +142,7 @@ echo "$MESSAGE" > /etc/issue.net
 echo "$MESSAGE" > /etc/motd
 
 # Installera AIDE (File Integrity) - Ger ofta 3-5 poäng direkt
-apt-get install -y aide
+#apt-get install -y aide aideinit --no-install-recommends
 aideinit --quiet --force
 cp /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz
 
