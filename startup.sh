@@ -1,4 +1,6 @@
 #!/bin/bash
+set -x
+set -e
 
 # 1. Paket & Verktyg (Adresserar DEB-0280, PKGS-7394)
 apt-get update
@@ -48,7 +50,7 @@ sed -i 's/^PASS_WARN_AGE.*/PASS_WARN_AGE   14/' /etc/login.defs
 chmod 600 /etc/shadow
 chmod 600 /etc/gshadow
 
-8. Ta bort onödiga tjänster (Adresserar DEB-0280)
+# 8. Ta bort onödiga tjänster (Adresserar DEB-0280)
 systemctl disable --now avahi-daemon
 systemctl disable --now cups
 systemctl disable --now rpcbind
@@ -65,7 +67,10 @@ ufw allow ssh
 ufw --force enable
 
 # Enable automatic security updates
-dpkg-reconfigure -plow unattended-upgrades
+#dpkg-reconfigure -plow unattended-upgrades
+echo "unattended-upgrades unattended-upgrades/enable_auto_updates boolean true" | debconf-set-selections
+dpkg-reconfigure -f noninteractive unattended-upgrades
+
 
 # Auditd & Lynis (Adresserar AUDT-9400, AUDT-9401)
 apt-get install -y auditd
