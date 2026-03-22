@@ -8,6 +8,7 @@ on:
     branches: [main]
 
 jobs:
+
   lint-and-scan:
     runs-on: ubuntu-latest
     steps:
@@ -70,51 +71,27 @@ jobs:
             [ -f /etc/fail2ban/jail.local ] && echo "✅ Fail2ban OK"
             
             echo "--- Kontrollerar Lynis ---"
-            echo "⏳ Väntar på att startup-skriptet och Lynis ska bli klara..."
+            echo "⏳ Väntar på att Lynis-skanningen ska slutföras helt..."
             
-            # Vänta max 8 minuter (48 försök * 10 sekunder)
-            for i in {1..48}; do
-              if [ -f /var/log/lynis-report.txt ]; then
-                echo "✅ Lynis-rapport hittad efter $i försök!"
-                # Vänta 5 sekunder extra så att filen hinner skrivas klart
-                sleep 5
+            # Vänta max 10 minuter (60 försök * 10 sekunder)
+            for i in {1..60}; do
+              # Vi letar specifikt efter "Hardening index" inuti filen
+              if grep -q "Hardening index" /var/log/lynis-report.txt 2>/dev/null; then
+                echo "✅ Lynis har skrivit klart rapporten efter $i försök!"
                 break
               fi
-              echo "Väntar på rapport... ($i/48)"
+              echo "Väntar på att index ska genereras... ($i/60)"
               sleep 10
             done
 
-            #if [ ! -f /var/log/lynis-report.txt ]; then
-            #  echo "❌ TIMEOUT: Lynis-rapporten skapades aldrig. Kontrollera journalctl -u google-startup-scripts.service på VM:en."
-            #  exit 1
-            #fi
-
-            echo "--- Verifierar resultat ---"
-            #grep -i "Hardening index" /var/log/lynis-report.txt
-            if [ -f /var/log/lynis-report.txt ]; then
-              # Vi använder 'cat' och 'tr' för att tvätta bort färgkoder innan grep
-              # Detta förhindrar att grep misslyckas pga dolda tecken
-              SCORE_LINE=$(cat /var/log/lynis-report.txt | tr -d '\033' | grep "Hardening index")
-              echo "Hittade rad: $SCORE_LINE"
-              
-              # Kontrollera att raden faktiskt innehåller något
-              [[ -z "$SCORE_LINE" ]] && (echo "❌ Kunde inte läsa index" && exit 1) || echo "✅ Index läst"
-            else
-              echo "❌ Filen saknas fortfarande"
+            if ! grep -q "Hardening index" /var/log/lynis-report.txt; then
+              echo "❌ TIMEOUT: Lynis hann inte skriva klart indexet."
               exit 1
             fi
-
-            #if [ -f /var/log/lynis-report.txt ]; then
-              # Lynis skriver poängen i formatet "Hardening index : 65"
-              # Vi använder -i för att strunta i stora/små bokstäver
-            #  grep -i "Hardening index" /var/log/lynis-report.txt || echo "Kunde inte hitta index i filen."
-            #else
-            #  echo "❌ Hittade ingen rapport på /var/log/lynis-report.txt"
-            #  exit 1
-            #fi
             
-            # Write out the score so it shows up in the log directly
-            #grep "Hardening index" /var/log/lynis-report.txt || echo "Hardening index: 0"
+            # Nu kan vi säkert läsa raden
+            SCORE_LINE=$(strings /var/log/lynis-report.txt | grep "Hardening index")
+            echo "Resultat: $SCORE_LINE"
 
             echo "🔍 Verifierar Auditd-status (ACCT-9628)..."
             # Kontrollera att tjänsten körs

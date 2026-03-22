@@ -6,6 +6,10 @@ terraform {
       version = "~> 5.0"
     }
   }
+  backend "gcs" {
+    bucket = "chas-tf-state-fridhemfighters"
+    prefix = "lab1/lars-torngren"
+  }
 }
 
 provider "google" {
@@ -26,6 +30,14 @@ resource "google_compute_instance" "vm" {
     }
   }
 
+  #boot_disk {
+  #initialize_params {
+  #  image = "family/hardened-ubuntu" # Terraform tar alltid den senaste versionen
+  #  size  = 20
+  #  type  = "pd-balanced"
+  #  }
+  #}
+
   network_interface {
     network = "default"
     access_config {} # Ger VM:en en extern IP
@@ -36,8 +48,6 @@ resource "google_compute_instance" "vm" {
     # file() reading your local public key when you run terraform apply
     # 'ubuntu' is the user name within the VM
     # 'split' splits the key at spaces, we take the two first parts (type and key)
-    #ssh-keys = "ubuntu:${join(" ", slice(split(" ", file("/Users/lasse/.ssh/id_ed25519.pub")), 0, 2))}"
-    #ssh-keys = "ubuntu:${file("id_github_actions.pub")}"
     ssh-keys = "ubuntu:${var.ssh_pub_key}"
   }
 
