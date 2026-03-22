@@ -65,3 +65,8 @@ resource "google_compute_disk_resource_policy_attachment" "backup_attachment" {
   disk = google_compute_instance.vm.name
   zone = "${var.region}-b"
 }
+
+output "instance_external_ip" {
+  description = "Den externa IP-adressen för din härdade VM"
+  value       = google_compute_instance.vm.network_interface[0].access_config[0].nat_ip
+}
