@@ -1,6 +1,7 @@
 #!/bin/bash
 set -x
 set -e
+export DEBIAN_FRONTEND=noninteractive
 
 # Tillfällig fix om apt behöver köra saker från /tmp under installationen
 #export TMPDIR=/var/tmp
@@ -51,7 +52,7 @@ echo "install sctp /bin/true" >> /etc/modprobe.d/disable-protocols.conf
 #echo "net.ipv4.conf.all.rp_filter=1" >> /etc/sysctl.conf
 #echo "net.ipv4.conf.default.rp_filter=1" >> /etc/sysctl.conf
 #echo "net.ipv4.tcp_syncookies=1" >> /etc/sysctl.conf
-#sysctl -p
+
 cat <<EOF > /etc/sysctl.d/99-hardening.conf
 kernel.kptr_restrict = 2
 kernel.dmesg_restrict = 1
@@ -64,7 +65,7 @@ net.ipv4.ip_forward = 0
 net.ipv4.conf.all.accept_source_route = 0
 net.ipv6.conf.all.accept_source_route = 0
 EOF
-sysctl -p /etc/sysctl.d/99-hardening.conf
+#sysctl -p /etc/sysctl.d/99-hardening.conf
 
 # Shadow-härdning (Adresserar AUTH-9328)
 sed -i 's/^PASS_MAX_DAYS.*/PASS_MAX_DAYS   90/' /etc/login.defs
