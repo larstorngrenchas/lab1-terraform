@@ -14,9 +14,11 @@ apt-get install -y --no-install-recommends \
     unattended-upgrades \
     auditd \
     acct \
-    rkhunter \
     libpam-tmpdir \
-    apt-show-versions 
+    apt-show-versions
+
+apt-get install -y lynis rkhunter
+#apt-get install -y lynis
 
 # 2. SSH-härdning (Adresserar SSH-7408 - flera punkter)
 sed -i 's/#MaxAuthTries 6/MaxAuthTries 3/' /etc/ssh/sshd_config
@@ -161,7 +163,6 @@ apt-get clean
 
 # Kör en audit och spara rapporten på en säker plats
 # --quick för att köra utan användarinteraktion
-apt-get install -y lynis
 lynis audit system --quick --no-colors > /var/log/lynis-report.txt
 
 # Skapa en enkel check-fil för att bekräfta att skriptet gått klart

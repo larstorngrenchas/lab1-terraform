@@ -6,6 +6,10 @@ terraform {
       version = "~> 5.0"
     }
   }
+  backend "gcs" {
+    bucket = "chas-tf-state-fridhemfighters"
+    prefix = "lab1/lars-torngren"
+  }
 }
 
 provider "google" {
