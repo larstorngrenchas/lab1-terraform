@@ -7,6 +7,11 @@ packer {
   }
 }
 
+variable "project_id" {
+  type    = string
+  default = "chas-devsecops-2026"
+}
+
 source "googlecompute" "hardened-ubuntu" {
   project_id   = "chas-devsecops-2026"
   source_image_family = "ubuntu-2204-lts"
