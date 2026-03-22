@@ -51,7 +51,7 @@ jobs:
           # Hämta IP dynamiskt via gcloud med tydliga citattecken
           VM_IP=$(gcloud compute instances describe "$VM_NAME" \
             --zone="europe-west1-b" \
-            --format='get(networkInterfaces.accessConfigs.natIP)')
+            --format='value(networkInterfaces[0].accessConfigs[0].natIP)')
 
           echo "Ansluter till VM: $VM_IP"
 
