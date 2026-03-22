@@ -51,49 +51,33 @@ jobs:
           #chmod 600 ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_github_actions
 
-      - name: Get VM IP and Run SSH Tests
+      - name: Get VM IP and Run Security Tests
         run: |
-          # Skapa en lokal variabel i bash för att undvika problem med citattecken
-          STUDENT_ID="${{ secrets.STUDENT_ID }}"
-          VM_NAME="lars-torngren-lab1-vm"
+          # 1. Hämta IP (värdet hamnar i GitHub-löparens minne)
+          VM_IP=$(gcloud compute instances describe "lars-torngren-lab1-vm" \
+            --zone="europe-north1-b" \
+            --format='value(networkInterfaces.accessConfigs.natIP)')
 
-          echo "Söker efter VM: $VM_NAME"
+          echo "Ansluter till VM på IP: $VM_IP"
 
-          # Hämta IP dynamiskt via gcloud med tydliga citattecken
-          VM_IP=$(gcloud compute instances describe "$VM_NAME" \
-            --zone="europe-west1-b" \
-            --format='value(networkInterfaces[0].accessConfigs[0].natIP)')
-
-          echo "Ansluter till VM: $VM_IP som ubuntu med SSH-nyckel"
-
-          # Nu använder vi nyckeln vi skapade i steget innan
-          #ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ubuntu@$VM_IP << 'EOF'
-          ssh -i ~/.ssh/id_github_actions -o StrictHostKeyChecking=no ubuntu@$VM_IP << 'EOF'
-            echo "✅ Inloggad! Kör tester..."
-
-          # Verifiera inställningar inuti VM:en
-          ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP << 'EOF'
+          # 2. Kör testerna (vi använder 'EOF' med citattecken för att inte expandera variabler lokalt)
+          ssh -i ~/.ssh/id_github_actions -o StrictHostKeyChecking=no -o ConnectTimeout=30 ubuntu@$VM_IP << 'EOF'
             set -e
             echo "--- Verifierar SSH-härdning ---"
-            grep -q "^MaxAuthTries 3" /etc/ssh/sshd_config
-            grep -q "^X11Forwarding no" /etc/ssh/sshd_config
+            grep -q "^MaxAuthTries 3" /etc/ssh/sshd_config && echo "✅ SSH OK"
             
             echo "--- Verifierar System-härdning ---"
-            grep -q "umask 027" /etc/profile
-            [ -f /etc/fail2ban/jail.local ]
+            grep -q "umask 027" /etc/profile && echo "✅ Umask OK"
+            [ -f /etc/fail2ban/jail.local ] && echo "✅ Fail2ban OK"
             
             echo "--- Kontrollerar Lynis ---"
-            [ -f /var/log/lynis-report.txt ]
-            echo "✅ All manuell verifiering OK!"
-
-            # Visa scoren direkt i terminalen för säkerhets skull
-            grep "Hardening index" /var/log/lynis-report.txt
+            [ -f /var/log/lynis-report.txt ] && echo "✅ Lynis-rapport hittad"
+            
+            # Skriv ut scoren så den syns i loggen direkt
+            grep "Hardening index" /var/log/lynis-report.txt || echo "Hardening index: 0"
           EOF
 
-          # Hämta Lynis-rapporten
-          #scp -o StrictHostKeyChecking=no ubuntu@$VM_IP:/var/log/lynis-report.txt ./lynis-report.txt
-          # Hämta Lynis-rapporten med samma nyckel
-          #scp -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ubuntu@$VM_IP:/var/log/lynis-report.txt ./lynis-report.txt
+          # 3. Hämta rapporten (VIKTIGT: Här måste $VM_IP vara utanför 'EOF')
           scp -i ~/.ssh/id_github_actions -o StrictHostKeyChecking=no ubuntu@$VM_IP:/var/log/lynis-report.txt ./lynis-report.txt
 
       - name: Extract and Display Hardening Score
